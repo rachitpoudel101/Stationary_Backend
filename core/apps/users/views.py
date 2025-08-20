@@ -1,0 +1,52 @@
+import traceback
+from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework import viewsets
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from core.apps.users.permissions.permissions import IsSuperAdmin
+from core.apps.users.models import Users
+from core.apps.users.serializers.serializers import UserCreateSerializer
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = Users.objects.all()
+    serializer_class = UserCreateSerializer
+    permission_classes = [IsSuperAdmin]
+
+class SelfDetails(ListAPIView):
+    queryset = Users.objects.all()
+    serializer_class = UserCreateSerializer
+
+    def list(self, request, *args, **kwargs):
+        try:
+            user = self.queryset.filter(id=request.user.id).first()
+            if not user:
+                return Response(
+                    {"detail": "User not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            serializer = self.serializer_class(user, context={"request": request})
+            data = serializer.data
+            data["is_superuser"] = request.user.is_superuser
+
+            return Response(data)
+        except Exception as e:
+            traceback.print_exc()
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class LogoutView(APIView):
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+
+        if not refresh_token:
+            return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Token blacklisted"}, status=status.HTTP_205_RESET_CONTENT)
+        except TokenError:
+            return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
