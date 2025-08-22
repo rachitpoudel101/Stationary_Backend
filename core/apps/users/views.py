@@ -7,7 +7,9 @@ from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from core.apps.users.permissions.permissions import IsSuperAdmin
 from core.apps.users.models import Users
-from core.apps.users.serializers.serializers import UserCreateSerializer
+from core.apps.users.serializers.serializers import UserCreateSerializer, LogoutSerializer
+from django.core.exceptions import ObjectDoesNotExist
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UserCreateSerializer
@@ -39,14 +41,20 @@ class SelfDetails(ListAPIView):
 
 class LogoutView(APIView):
     def post(self, request):
-        refresh_token = request.data.get("refresh")
+        serializer = LogoutSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not refresh_token:
-            return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = serializer.validated_data["refresh"]
 
         try:
             token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Token blacklisted"}, status=status.HTTP_205_RESET_CONTENT)
+            try:
+                token.blacklist()
+                return Response({"detail": "Token blacklisted"}, status=status.HTTP_205_RESET_CONTENT)
+            except AttributeError:
+                return Response({"detail": "Blacklisting not supported. Check your configuration."}, status=status.HTTP_400_BAD_REQUEST)
         except TokenError:
             return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

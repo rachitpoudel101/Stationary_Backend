@@ -37,3 +37,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         user.is_staff = True
         user.save()
         return user
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(required=True)
