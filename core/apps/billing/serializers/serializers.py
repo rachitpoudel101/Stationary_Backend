@@ -19,10 +19,10 @@ class BillingItemSerializer(serializers.ModelSerializer):
             "unit_total",
         ]
 
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['product_name'] = ProductStockSerializer(instance.product_name).data
-        return rep
+    # def to_representation(self, instance):
+    #     rep = super().to_representation(instance)
+    #     rep['product_name'] = ProductStockSerializer(instance.product_name).data
+    #     return rep
 
 class BillSerializer(serializers.ModelSerializer):
     items = BillingItemSerializer(many=True, source='bill')
@@ -60,7 +60,7 @@ class BillSerializer(serializers.ModelSerializer):
             BillingItem.objects.create(bill=bill, **item_data)
         return bill
 
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        rep['items'] = BillingItemSerializer(instance.bill.all(), many=True).data
-        return rep
+    # def to_representation(self, instance):
+    #     rep = super().to_representation(instance)
+    #     rep['items'] = BillingItemSerializer(instance.bill.all(), many=True).data
+    #     return rep
