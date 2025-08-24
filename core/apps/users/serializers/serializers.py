@@ -22,7 +22,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
         username = data.get('username')
         if Users.objects.filter(username=username).exists():
             raise serializers.ValidationError({"username": "This username is already taken."})
-        
+        request = self.context.get('request')
+        if request:
+            creator = request.user
+            new_role = data.get('role')
+            if new_role == 'admin' and not getattr(creator, 'is_superuser', False):
+                raise serializers.ValidationError({"role": "Only superadmin can create admin users."})
+            if new_role == 'staff' and getattr(creator, 'role', None) == 'admin':
+                pass  
+            elif new_role == 'admin' and getattr(creator, 'role', None) == 'admin':
+                raise serializers.ValidationError({"role": "Admin cannot create another admin."})
+            elif new_role == 'staff' and getattr(creator, 'role', None) != 'admin' and not getattr(creator, 
+            'is_superuser', False):
+                raise serializers.ValidationError({"role": "Only admin or superadmin can create staff users."})
         return data
 
     def create(self, validated_data):
