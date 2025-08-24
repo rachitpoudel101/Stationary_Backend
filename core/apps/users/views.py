@@ -8,12 +8,16 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from core.apps.users.permissions.permissions import IsSuperAdmin
 from core.apps.users.models import Users
 from core.apps.users.serializers.serializers import UserCreateSerializer, LogoutSerializer
-from django.core.exceptions import ObjectDoesNotExist
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = Users.objects.all()
     serializer_class = UserCreateSerializer
     permission_classes = [IsSuperAdmin]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 class SelfDetails(ListAPIView):
     queryset = Users.objects.all()
