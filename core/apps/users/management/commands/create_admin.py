@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 email=admin_email,
                 password=admin_password,
                 is_super=True,
-                role="admin",
+                role="superadmin",
             )
             self.stdout.write(self.style.SUCCESS("Admin user created successfully"))
         else:
