@@ -46,9 +46,42 @@ class UserCreateSerializer(serializers.ModelSerializer):
             last_name=validated_data.get("last_name", "")
         )
         user.set_password(validated_data.get("password"))
-        user.is_staff = True
+        if user.role == Users.RolesChoices.STAFF:
+            user.is_staff = True
         user.save()
         return user
 
+    def update(self, instance, validated_data):
+        # Update normal fields
+        for attr, value in validated_data.items():
+            if attr == 'password':
+                continue  # handle separately
+            setattr(instance, attr, value)
+
+        # Update password properly
+        password = validated_data.get('password')
+        if password:
+            instance.set_password(password)
+
+        # Ensure staff flag aligns with role
+        if instance.role == Users.RolesChoices.STAFF:
+            instance.is_staff = True
+        elif instance.role == Users.RolesChoices.ADMIN:
+            instance.is_staff = True  # admins are staff too
+        else:
+            instance.is_staff = False
+
+        instance.save()
+        return instance
+
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=True)
+
+class SelfAPISerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = Users
+        fields = [
+            "id",
+            "username",
+            "role",
+        ]
