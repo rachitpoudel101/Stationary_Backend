@@ -8,10 +8,10 @@ from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from core.apps.users.models import Users
 from core.apps.users.permissions.permissions import IsAdmin, IsSuperAdmin
 from rest_framework.permissions import IsAuthenticated
-from core.apps.users.serializers.serializers import UserCreateSerializer, LogoutSerializer
+from core.apps.users.serializers.serializers import UserCreateSerializer, LogoutSerializer, SelfAPISerilizer
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, IsSuperAdmin | IsAdmin]
+    permission_classes = [ IsSuperAdmin | IsAdmin , IsAuthenticated]
     serializer_class = UserCreateSerializer
 
     def get_queryset(self):
@@ -20,16 +20,19 @@ class UserViewSet(viewsets.ModelViewSet):
         if not user.is_super:
             queryset = queryset.filter(is_super=False)
         if user.role == "admin":
-            queryset = queryset.filter(is_staff=False, is_super=False)
+            queryset = queryset.filter(is_staff=True, is_super=False, role="staff")
+            
         return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
-        return context    
+        return context
+
+
 class SelfDetails(ListAPIView):
     queryset = Users.objects.all()
-    serializer_class = UserCreateSerializer
+    serializer_class = SelfAPISerilizer
 
     def list(self, request, *args, **kwargs):
         try:
@@ -69,6 +72,26 @@ class LogoutView(APIView):
             return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserRoleUpdateAPIView(APIView):
+    permission_classes = []  
+
+    def post(self, request,user_id):
+        user_id = user_id
+        role = request.data.get("role")
+        
+        if not user_id or not role: 
+            return Response({"error": "user_id and role is required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = Users.objects.get(id=user_id)
+            user.role = role
+            user.save()
+
+            return Response({"message": "The user's role is updated"}, status=status.HTTP_200_OK)
+
+        except Users.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 class RoleConfigView(APIView):
     def get(self, request):
         roles = [choice[0] for choice in Users.RolesChoices.choices]
