@@ -74,7 +74,7 @@ class LogoutView(APIView):
             return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserRoleUpdateAPIView(APIView):
-    permission_classes = []  
+    permission_classes = [IsAdmin |IsSuperAdmin]  
 
     def post(self, request,user_id):
         user_id = user_id

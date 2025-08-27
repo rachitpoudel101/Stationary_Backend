@@ -19,7 +19,6 @@ class Users(AbstractUser):
     is_deleted = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        print(f"DEBUG: Saving user with username={self.username}, role={self.role}")
         super().save(*args, **kwargs)
 
     def __str__(self):
