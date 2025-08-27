@@ -29,12 +29,17 @@ class CategoryCreateSerializer(serializers.ModelSerializer):
 
 class ProductStockSerializer(serializers.ModelSerializer):
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+    category_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Productstock
-        fields = [ 'category','name', 'cost_price', 'margin', 'description', 'stock']
+        fields = [ 'id','category','name', 'cost_price', 'margin', 'description', 'stock', 'category_name']
 
     def create(self, validated_data):
         return Productstock.objects.create(**validated_data)
+
+    def get_category_name(self, obj):
+        return obj.category.name
 
 class DiscountConfigSerializer(serializers.ModelSerializer):
     percentage = serializers.DecimalField(max_digits=3, decimal_places=2)
