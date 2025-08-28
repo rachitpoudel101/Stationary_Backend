@@ -16,7 +16,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Users.objects.all()
+        queryset = Users.objects.filter(is_super = False)
         if not user.is_super:
             queryset = queryset.filter(is_super=False)
         if user.role == "admin":
