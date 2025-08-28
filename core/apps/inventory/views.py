@@ -1,6 +1,6 @@
 import traceback
 from rest_framework import viewsets
-from core.apps.users.permissions.permissions import IsSuperAdmin, IsAdmin
+from core.apps.users.permissions.permissions import IsSuperAdmin, IsAdmin, Isstaff
 from core.apps.inventory.models import Category, Productstock, DiscountConfig
 from core.apps.inventory.serializers.serializers import CategoryCreateSerializer , ProductStockSerializer, DiscountConfigSerializer
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -11,7 +11,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Productstock.objects.all()
     serializer_class = ProductStockSerializer
-    permission_classes = [IsSuperAdmin | IsAdmin]
+    permission_classes = [IsSuperAdmin | IsAdmin | Isstaff]
 
 class DiscountViewSet(viewsets.ModelViewSet):
     queryset = DiscountConfig.objects.all()
