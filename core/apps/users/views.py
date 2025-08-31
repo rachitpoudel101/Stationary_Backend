@@ -16,11 +16,11 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Users.objects.filter(is_super = False)
+        queryset = Users.objects.filter(is_super = False, is_deleted=False)
         if not user.is_super:
             queryset = queryset.filter(is_super=False)
         if user.role == "admin":
-            queryset = queryset.filter(is_staff=True, is_super=False, role="staff")
+            queryset = queryset.filter(is_super=False)
             
         return queryset
 
@@ -29,6 +29,11 @@ class UserViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_deleted = True
+        instance.save()
+        return Response({"detail": "User soft deleted (is_deleted=True)"}, status=status.HTTP_204_NO_CONTENT)
 
 class SelfDetails(ListAPIView):
     queryset = Users.objects.all()
@@ -96,3 +101,15 @@ class RoleConfigView(APIView):
     def get(self, request):
         roles = [choice[0] for choice in Users.RolesChoices.choices]
         return Response({"roles": roles})
+
+class UserRestoreAPIView(APIView):
+    permission_classes = [IsAdmin | IsSuperAdmin, IsAuthenticated]
+
+    def post(self, request, user_id):
+        try:
+            user = Users.objects.get(id=user_id, is_deleted=True)
+            user.is_deleted = False
+            user.save()
+            return Response({"message": "User restored"}, status=status.HTTP_200_OK)
+        except Users.DoesNotExist:
+            return Response({"error": "User not found or not deleted"}, status=status.HTTP_404_NOT_FOUND)
