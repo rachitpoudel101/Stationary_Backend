@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from core.apps.users.views import LogoutView, UserViewSet, SelfDetails, UserRoleUpdateAPIView, RoleConfigView
+from core.apps.users.views import LogoutView, UserViewSet, SelfDetails, UserRoleUpdateAPIView, RoleConfigView, UserRestoreAPIView
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet, basename="users")
@@ -12,4 +12,5 @@ urlpatterns = [
     path("logout/",LogoutView.as_view(), name="logout"),
     path("role-update/<int:user_id>/", UserRoleUpdateAPIView.as_view(), name="role-update"),
     path("role-config/", RoleConfigView.as_view(), name="role-config"),
+    path("restore/<int:user_id>/", UserRestoreAPIView.as_view(), name="user-restore"),
 ]
