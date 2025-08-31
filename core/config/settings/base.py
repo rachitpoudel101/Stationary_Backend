@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-emowb9@xw0#ws#ay67d@yx+%*+9@$+bjl#6=p5!da(ip174ad(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.2.2.78',]
 
 
 # Application definition
@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'core.apps.inventory',
     'core.apps.billing',
     'core.apps.notifications',
+    'core.apps.dashboard',
 ]
 
 MIDDLEWARE = [
@@ -68,7 +69,7 @@ AUTH_USER_MODEL = "users.Users"
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
-
+    "http://10.2.2.78:5173",
 ]
 
 INTERNAL_IPS = [

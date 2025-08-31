@@ -19,6 +19,7 @@ from django.conf import settings
 from core.urls.urls_users import urlpatterns as users_patterns
 from core.urls.inventory_url import urlpatterns as inventory_patterns
 from core.urls.urls_billing import urlpatterns as billing_partterns
+from core.urls.urls_dashboard import urlpatterns as dashboard_patterns
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -34,6 +35,7 @@ urlpatterns = [
     path("", include (users_patterns)),
     path("",include(inventory_patterns)),
     path("",include(billing_partterns)),
+    path("", include(dashboard_patterns)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
