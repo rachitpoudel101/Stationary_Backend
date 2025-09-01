@@ -1,6 +1,7 @@
 asgiref==3.9.1
 attrs==25.3.0
 Django==5.2.5
+django-cors-headers==4.7.0
 django-debug-toolbar==6.0.0
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
