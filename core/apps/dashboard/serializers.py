@@ -31,6 +31,11 @@ class YearlySalesMonthSerializer(serializers.Serializer):
     month = serializers.CharField()
     sales = serializers.CharField()
 
+class TopProductSerializer(serializers.Serializer):
+    product_name = serializers.CharField()
+    sold_quantity = serializers.IntegerField()
+    stock = serializers.IntegerField()
+
 class DashboardStatsSerializer(serializers.Serializer):
     total_sales = serializers.DecimalField(max_digits=10, decimal_places=2)
     total_profit = serializers.DecimalField(max_digits=10, decimal_places=2)
@@ -50,3 +55,6 @@ class DashboardStatsSerializer(serializers.Serializer):
     weekly_sales_by_day = WeeklySalesDaySerializer(many=True)
     monthly_sales_by_date = MonthlySalesDateSerializer(many=True)
     yearly_sales_by_month = YearlySalesMonthSerializer(many=True)
+    week_top_product = TopProductSerializer(allow_null=True)
+    month_top_product = TopProductSerializer(allow_null=True)
+    year_top_product = TopProductSerializer(allow_null=True)
