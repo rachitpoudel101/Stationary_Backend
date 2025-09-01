@@ -245,6 +245,63 @@ def dashboard_stats(request):
         for p in products
     ]
 
+    # Top-selling product for the week
+    week_top = (
+        BillingItem.objects
+        .filter(bill_id__date__range=[week_start, week_end])
+        .values('product_id')
+        .annotate(total_sold=models.Sum('quantity'))
+        .order_by('-total_sold')
+        .first()
+    )
+    week_top_product = None
+    if week_top:
+        product = Productstock.objects.filter(id=week_top['product_id']).first()
+        if product:
+            week_top_product = {
+                'product_name': product.name,
+                'sold_quantity': week_top['total_sold'],
+                'stock': product.stock
+            }
+
+    # Top-selling product for the month
+    month_top = (
+        BillingItem.objects
+        .filter(bill_id__date__year=now.year, bill_id__date__month=now.month)
+        .values('product_id')
+        .annotate(total_sold=models.Sum('quantity'))
+        .order_by('-total_sold')
+        .first()
+    )
+    month_top_product = None
+    if month_top:
+        product = Productstock.objects.filter(id=month_top['product_id']).first()
+        if product:
+            month_top_product = {
+                'product_name': product.name,
+                'sold_quantity': month_top['total_sold'],
+                'stock': product.stock
+            }
+
+    # Top-selling product for the year
+    year_top = (
+        BillingItem.objects
+        .filter(bill_id__date__year=now.year)
+        .values('product_id')
+        .annotate(total_sold=models.Sum('quantity'))
+        .order_by('-total_sold')
+        .first()
+    )
+    year_top_product = None
+    if year_top:
+        product = Productstock.objects.filter(id=year_top['product_id']).first()
+        if product:
+            year_top_product = {
+                'product_name': product.name,
+                'sold_quantity': year_top['total_sold'],
+                'stock': product.stock
+            }
+
     data = {
         'total_sales': total_sales,
         'total_profit': total_profit,
@@ -264,6 +321,9 @@ def dashboard_stats(request):
         'weekly_sales_by_day': weekly_sales_by_day,
         'monthly_sales_by_date': monthly_sales_by_date,
         'yearly_sales_by_month': yearly_sales_by_month,
+        'week_top_product': week_top_product,
+        'month_top_product': month_top_product,
+        'year_top_product': year_top_product,
     }
     serializer = DashboardStatsSerializer(data)
     return JsonResponse(serializer.data)
