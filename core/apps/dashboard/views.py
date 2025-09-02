@@ -90,26 +90,6 @@ def dashboard_stats(request):
         profit=models.Sum('total_profit')
     )['profit'] or 0
 
-    # Monthly breakdown by date
-    days_in_month = monthrange(now.year, now.month)[1]
-    monthly_profit_by_date = []
-    for day_num in range(1, days_in_month + 1):
-        day = now.replace(day=day_num)
-        day_profit = BillingItem.objects.filter(
-            bill_id__date=day
-        ).select_related('product_id').annotate(
-            total_profit=models.ExpressionWrapper(
-                (models.F('unit_price') - models.F('product_id__cost_price')) * models.F('quantity'),
-                output_field=models.DecimalField()
-            )
-        ).aggregate(
-            profit=models.Sum('total_profit')
-        )['profit'] or 0
-        profit_str = f"{day_profit:.2f}"
-        monthly_profit_by_date.append({
-            'date': day.isoformat(),
-            'profit': profit_str
-        })
 
     # Yearly (current year)
     yearly_profit = BillingItem.objects.filter(
@@ -182,20 +162,6 @@ def dashboard_stats(request):
         sales=models.Sum('unit_total')
     )['sales'] or 0
 
-    # Monthly breakdown by date
-    monthly_sales_by_date = []
-    for day_num in range(1, days_in_month + 1):
-        day = now.replace(day=day_num)
-        day_sales = BillingItem.objects.filter(
-            bill_id__date=day
-        ).aggregate(
-            sales=models.Sum('unit_total')
-        )['sales'] or 0
-        sales_str = f"{day_sales:.2f}"
-        monthly_sales_by_date.append({
-            'date': day.isoformat(),
-            'sales': sales_str
-        })
 
     # Yearly (current year)
     yearly_sales = BillingItem.objects.filter(
@@ -311,7 +277,6 @@ def dashboard_stats(request):
         'profit_weekly': weekly_profit,
         'profit_monthly': monthly_profit,
         'weekly_profit_by_day': weekly_profit_by_day,
-        'monthly_profit_by_date': monthly_profit_by_date,
         'yearly_profit_by_month': yearly_profit_by_month,
         'profit_yearly': yearly_profit,
         'sales_daily': daily_sales,
@@ -319,7 +284,6 @@ def dashboard_stats(request):
         'sales_monthly': monthly_sales,
         'sales_yearly': yearly_sales,
         'weekly_sales_by_day': weekly_sales_by_day,
-        'monthly_sales_by_date': monthly_sales_by_date,
         'yearly_sales_by_month': yearly_sales_by_month,
         'week_top_product': week_top_product,
         'month_top_product': month_top_product,
@@ -327,28 +291,3 @@ def dashboard_stats(request):
     }
     serializer = DashboardStatsSerializer(data)
     return JsonResponse(serializer.data)
-
-@require_GET
-def product_sales_list(request):
-    # Get all products with stock
-    products = Productstock.objects.values('id', 'name', 'stock')
-    product_ids = [p['id'] for p in products]
-
-    # Aggregate sold quantity per product
-    sold_qty_map = {
-        item['product_id']: item['total_sold']
-        for item in BillingItem.objects.filter(product_id__in=product_ids)
-        .values('product_id')
-        .annotate(total_sold=models.Sum('quantity'))
-    }
-
-    result = [
-        {
-            'product_name': p['name'],
-            'stock': p['stock'],
-            'sold_quantity': sold_qty_map.get(p['id'], 0)
-        }
-        for p in products
-    ]
-
-    return JsonResponse({'products': result})
