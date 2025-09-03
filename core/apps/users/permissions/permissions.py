@@ -1,5 +1,6 @@
 from rest_framework import permissions
 
+
 class IsSuperAdmin(permissions.BasePermission):
     """
     Allows access only to super admin.
@@ -11,11 +12,13 @@ class IsSuperAdmin(permissions.BasePermission):
         user = request.user
         # Only allow authenticated superusers or staff
         return bool(user and user.is_authenticated and (user.is_superuser))
-    
-class IsAdmin (permissions.BasePermission):
+
+
+class IsAdmin(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.role == "admin"
-    
-class Isstaff (permissions.BasePermission):
+
+
+class Isstaff(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.role == "staff"

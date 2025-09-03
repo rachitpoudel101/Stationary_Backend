@@ -1,12 +1,13 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.utils.crypto import get_random_string
+from django.db import models
+
+
 class Users(AbstractUser):
     class RolesChoices(models.TextChoices):
         ADMIN = "admin"
         STAFF = "staff"
-        CUSTOMER = "customer"
-    
+        # CUSTOMER = "customer"
+
     role = models.CharField(max_length=50, choices=RolesChoices.choices)
     is_super = models.BooleanField(default=False)
     created_by = models.ForeignKey(
