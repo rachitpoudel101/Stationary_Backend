@@ -1,13 +1,14 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
-from core.apps.inventory.views import CategoryViewSet, ProductViewSet, DiscountViewSet
+
+from core.apps.inventory.views import CategoryViewSet, ProductViewSet
 
 router = DefaultRouter()
 router.register(r"category", CategoryViewSet, basename="category")
-router.register(r"product",ProductViewSet, basename='product')
-router.register(r"discount-config",DiscountViewSet, basename="discount-config")
+router.register(r"product", ProductViewSet, basename="product")
+# router.register(r"discount-config",DiscountViewSet, basename="discount-config")
 
 
 urlpatterns = [
-     path('', include(router.urls)),
+    path("", include(router.urls)),
 ]

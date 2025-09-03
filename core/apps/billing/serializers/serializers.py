@@ -1,11 +1,17 @@
-from rest_framework import serializers
 from django.core.exceptions import ValidationError
+from rest_framework import serializers
+
 from core.apps.billing.models import Bill, BillingItem
 from core.apps.inventory.serializers.serializers import ProductStockSerializer
 
+
 class BillingItemSerializer(serializers.ModelSerializer):
-    product_id = serializers.PrimaryKeyRelatedField(queryset=ProductStockSerializer.Meta.model.objects.all())
-    bill_id = serializers.PrimaryKeyRelatedField(queryset=Bill.objects.all(), required=False)
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=ProductStockSerializer.Meta.model.objects.all()
+    )
+    bill_id = serializers.PrimaryKeyRelatedField(
+        queryset=Bill.objects.all(), required=False
+    )
 
     class Meta:
         model = BillingItem
@@ -23,8 +29,11 @@ class BillingItemSerializer(serializers.ModelSerializer):
     #     rep['product_name'] = ProductStockSerializer(instance.product_name).data
     #     return rep
 
+
 class BillSerializer(serializers.ModelSerializer):
-    items = BillingItemSerializer(many=True, source='bill_items')  # changed source to 'bill_items'
+    items = BillingItemSerializer(
+        many=True, source="bill_items"
+    )  # changed source to 'bill_items'
 
     class Meta:
         model = Bill
@@ -44,22 +53,33 @@ class BillSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        items_data = validated_data.pop('bill_items', [])  # changed from 'bill' to 'bill_items'
+        items_data = validated_data.pop(
+            "bill_items", []
+        )  # changed from 'bill' to 'bill_items'
         bill = Bill.objects.create(**validated_data)
         for item_data in items_data:
-            product = item_data['product_id']
-            quantity = item_data['quantity']
+            product = item_data["product_id"]
+            quantity = item_data["quantity"]
             if quantity < 0:
                 raise ValidationError("Quantity cannot be negative.")
             if product.stock < quantity:
-                raise ValidationError(f"Not enough stock for product '{product.name}'. Available: {product.stock}, Requested: {quantity}")
+                raise ValidationError(
+                    f"Not enough stock for product '{product.name}'. Available: {product.stock}, Requested: {quantity}"
+                )
             product.stock -= quantity
             if product.stock < 0:
-                raise ValidationError(f"Stock for product '{product.name}' cannot be negative after billing.")
+                raise ValidationError(
+                    f"Stock for product '{product.name}' cannot be negative after billing."
+                )
             product.save()
-            if item_data.get('unit_price', 0) < 0 or item_data.get('selling_price', 0) < 0 or item_data.get('discount_amount', 0) < 0 or item_data.get('unit_total', 0) < 0:
+            if (
+                item_data.get("unit_price", 0) < 0
+                or item_data.get("selling_price", 0) < 0
+                or item_data.get("discount_amount", 0) < 0
+                or item_data.get("unit_total", 0) < 0
+            ):
                 raise ValidationError("Amounts cannot be negative.")
-            item_data.pop('bill_id', None)
+            item_data.pop("bill_id", None)
             BillingItem.objects.create(bill_id=bill, **item_data)
         return bill
 

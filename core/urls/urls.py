@@ -14,30 +14,34 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import path,include
+
 from django.conf import settings
-from core.urls.urls_users import urlpatterns as users_patterns
-from core.urls.inventory_url import urlpatterns as inventory_patterns
-from core.urls.urls_billing import urlpatterns as billing_partterns
-from core.urls.urls_dashboard import urlpatterns as dashboard_patterns
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
+from core.urls.inventory_url import urlpatterns as inventory_patterns
+from core.urls.urls_billing import urlpatterns as billing_partterns
+from core.urls.urls_dashboard import urlpatterns as dashboard_patterns
+from core.urls.urls_users import urlpatterns as users_patterns
+from core.urls.urls_vendors import urlpatterns as vendor_patterns
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    path("", include (users_patterns)),
-    path("",include(inventory_patterns)),
-    path("",include(billing_partterns)),
+    path("", include(users_patterns)),
+    path("", include(inventory_patterns)),
+    path("", include(billing_partterns)),
     path("", include(dashboard_patterns)),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("", include(vendor_patterns)),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # Swagger UI documentation
     path(
@@ -55,8 +59,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     import debug_toolbar
+
     urlpatterns = [
-        path('__debug__/', include(debug_toolbar.urls)),
+        path("__debug__/", include(debug_toolbar.urls)),
     ] + urlpatterns
-
-

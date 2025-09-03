@@ -1,39 +1,49 @@
 import traceback
+
+from rest_framework import status, viewsets
 from rest_framework.generics import ListAPIView
-from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+
 from core.apps.users.models import Users
 from core.apps.users.permissions.permissions import IsAdmin, IsSuperAdmin
-from rest_framework.permissions import IsAuthenticated
-from core.apps.users.serializers.serializers import UserCreateSerializer, LogoutSerializer, SelfAPISerilizer
+from core.apps.users.serializers.serializers import (
+    LogoutSerializer,
+    SelfAPISerilizer,
+    UserCreateSerializer,
+)
+
 
 class UserViewSet(viewsets.ModelViewSet):
-    permission_classes = [ IsSuperAdmin | IsAdmin , IsAuthenticated]
+    permission_classes = [IsSuperAdmin | IsAdmin, IsAuthenticated]
     serializer_class = UserCreateSerializer
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Users.objects.filter(is_super = False, is_deleted=False)
+        queryset = Users.objects.filter(is_super=False, is_deleted=False)
         if not user.is_super:
             queryset = queryset.filter(is_super=False)
         if user.role == "admin":
             queryset = queryset.filter(is_super=False)
-            
+
         return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context['request'] = self.request
+        context["request"] = self.request
         return context
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         instance.is_deleted = True
         instance.save()
-        return Response({"detail": "User soft deleted (is_deleted=True)"}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "User soft deleted (is_deleted=True)"},
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
 
 class SelfDetails(ListAPIView):
     queryset = Users.objects.all()
@@ -44,8 +54,7 @@ class SelfDetails(ListAPIView):
             user = self.queryset.filter(id=request.user.id).first()
             if not user:
                 return Response(
-                    {"detail": "User not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
+                    {"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND
                 )
             serializer = self.serializer_class(user, context={"request": request})
             data = serializer.data
@@ -54,9 +63,9 @@ class SelfDetails(ListAPIView):
         except Exception as e:
             traceback.print_exc()
             return Response(
-                {"detail": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
 
 class LogoutView(APIView):
     def post(self, request):
@@ -70,37 +79,57 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             try:
                 token.blacklist()
-                return Response({"detail": "Token blacklisted"}, status=status.HTTP_205_RESET_CONTENT)
+                return Response(
+                    {"detail": "Token blacklisted"},
+                    status=status.HTTP_205_RESET_CONTENT,
+                )
             except AttributeError:
-                return Response({"detail": "Blacklisting not supported. Check your configuration."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "Blacklisting not supported. Check your configuration."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         except TokenError:
-            return Response({"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class UserRoleUpdateAPIView(APIView):
-    permission_classes = [IsAdmin |IsSuperAdmin]  
+    permission_classes = [IsAdmin | IsSuperAdmin]
 
-    def post(self, request,user_id):
+    def post(self, request, user_id):
         user_id = user_id
         role = request.data.get("role")
-        
-        if not user_id or not role: 
-            return Response({"error": "user_id and role is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user_id or not role:
+            return Response(
+                {"error": "user_id and role is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         try:
             user = Users.objects.get(id=user_id)
             user.role = role
             user.save()
 
-            return Response({"message": "The user's role is updated"}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "The user's role is updated"}, status=status.HTTP_200_OK
+            )
 
         except Users.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response(
+                {"error": "User not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+
 class RoleConfigView(APIView):
     def get(self, request):
         roles = [choice[0] for choice in Users.RolesChoices.choices]
         return Response({"roles": roles})
+
 
 class UserRestoreAPIView(APIView):
     permission_classes = [IsAdmin | IsSuperAdmin, IsAuthenticated]
@@ -112,4 +141,7 @@ class UserRestoreAPIView(APIView):
             user.save()
             return Response({"message": "User restored"}, status=status.HTTP_200_OK)
         except Users.DoesNotExist:
-            return Response({"error": "User not found or not deleted"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "User not found or not deleted"},
+                status=status.HTTP_404_NOT_FOUND,
+            )

@@ -1,32 +1,39 @@
 from rest_framework import serializers
 
+
 class ProductStockSoldSerializer(serializers.Serializer):
     product_name = serializers.CharField()
     stock = serializers.IntegerField()
     sold = serializers.IntegerField()
+
 
 class WeeklyProfitDaySerializer(serializers.Serializer):
     date = serializers.CharField()
     weekday = serializers.CharField()
     profit = serializers.CharField()
 
+
 class YearlyProfitMonthSerializer(serializers.Serializer):
     month = serializers.CharField()
     profit = serializers.CharField()
+
 
 class WeeklySalesDaySerializer(serializers.Serializer):
     date = serializers.CharField()
     weekday = serializers.CharField()
     sales = serializers.CharField()
 
+
 class YearlySalesMonthSerializer(serializers.Serializer):
     month = serializers.CharField()
     sales = serializers.CharField()
+
 
 class TopProductSerializer(serializers.Serializer):
     product_name = serializers.CharField()
     sold_quantity = serializers.IntegerField()
     stock = serializers.IntegerField()
+
 
 class DashboardStatsSerializer(serializers.Serializer):
     total_sales = serializers.DecimalField(max_digits=10, decimal_places=2)

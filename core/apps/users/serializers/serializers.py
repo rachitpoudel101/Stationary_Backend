@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from core.apps.users.models import Users
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
@@ -12,29 +14,40 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "id",
             "first_name",
             "last_name",
-            'password',
+            "password",
             "username",
             "role",
             "email",
-
         ]
+
     def validate(self, data):
-        username = data.get('username')
+        username = data.get("username")
         if Users.objects.filter(username=username).exists():
-            raise serializers.ValidationError({"username": "This username is already taken."})
-        request = self.context.get('request')
+            raise serializers.ValidationError(
+                {"username": "This username is already taken."}
+            )
+        request = self.context.get("request")
         if request:
             creator = request.user
-            new_role = data.get('role')
-            if new_role == 'admin' and not getattr(creator, 'is_superuser', False):
-                raise serializers.ValidationError({"role": "Only superadmin can create admin users."})
-            if new_role == 'staff' and getattr(creator, 'role', None) == 'admin':
-                pass  
-            elif new_role == 'admin' and getattr(creator, 'role', None) == 'admin':
-                raise serializers.ValidationError({"role": "Admin cannot create another admin."})
-            elif new_role == 'staff' and getattr(creator, 'role', None) != 'admin' and not getattr(creator, 
-            'is_superuser', False):
-                raise serializers.ValidationError({"role": "Only admin or superadmin can create staff users."})
+            new_role = data.get("role")
+            if new_role == "admin" and not getattr(creator, "is_superuser", False):
+                raise serializers.ValidationError(
+                    {"role": "Only superadmin can create admin users."}
+                )
+            if new_role == "staff" and getattr(creator, "role", None) == "admin":
+                pass
+            elif new_role == "admin" and getattr(creator, "role", None) == "admin":
+                raise serializers.ValidationError(
+                    {"role": "Admin cannot create another admin."}
+                )
+            elif (
+                new_role == "staff"
+                and getattr(creator, "role", None) != "admin"
+                and not getattr(creator, "is_superuser", False)
+            ):
+                raise serializers.ValidationError(
+                    {"role": "Only admin or superadmin can create staff users."}
+                )
         return data
 
     def create(self, validated_data):
@@ -43,7 +56,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             role=validated_data["role"],
             email=validated_data.get("email", ""),
             first_name=validated_data.get("first_name", ""),
-            last_name=validated_data.get("last_name", "")
+            last_name=validated_data.get("last_name", ""),
         )
         user.set_password(validated_data.get("password"))
         if user.role == Users.RolesChoices.STAFF:
@@ -54,12 +67,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Update normal fields
         for attr, value in validated_data.items():
-            if attr == 'password':
+            if attr == "password":
                 continue  # handle separately
             setattr(instance, attr, value)
 
         # Update password properly
-        password = validated_data.get('password')
+        password = validated_data.get("password")
         if password:
             instance.set_password(password)
 
@@ -74,8 +87,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField(required=True)
+
 
 class SelfAPISerilizer(serializers.ModelSerializer):
     class Meta:

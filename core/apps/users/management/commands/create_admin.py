@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+
 from core.apps.users.models import Users
 
 print("create_admin command module loaded")
