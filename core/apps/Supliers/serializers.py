@@ -20,7 +20,7 @@ class SupliersCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_name(self, value):
-        if Supliers.objects.filter(name=value).exists():
+        if Supliers.objects.filter(name=value, is_deleted=False).exists():
             raise serializers.ValidationError("Supliers with this name already exists.")
         return value
 
