@@ -1,6 +1,28 @@
 from rest_framework import serializers
 
-from core.apps.inventory.models import Category, Productstock
+from core.apps.inventory.models import Category, Productstock, UnitCreate
+
+
+class UnitCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnitCreate
+        fields = [
+            "id",
+            "unit",
+        ]
+        read_only_fields = ["id"]
+
+    def validate(self, data):
+        unit = data.get("unit")
+        if (
+            UnitCreate.objects.filter(unit=unit)
+            .exclude(id=getattr(self.instance, "id", None))
+            .exists()
+        ):
+            raise serializers.ValidationError(
+                {"unit": "This unit name already exists."}
+            )
+        return data
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -36,6 +58,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductStockSerializer(serializers.ModelSerializer):
     category_name = serializers.SerializerMethodField()
     supliers_name = serializers.SerializerMethodField()
+    unit_name = serializers.SerializerMethodField()
     is_expired = serializers.ReadOnlyField()
 
     class Meta:
@@ -46,28 +69,36 @@ class ProductStockSerializer(serializers.ModelSerializer):
             "category_name",
             "product_code",
             "name",
+            "unit",
+            "unit_name",
             "supliers",
             "supliers_name",
             "batch_number",
             "serial_number",
             "cost_price",
             "margin",
-            "description",
+            # "description",
             "stock",
             "expires_at",
             "is_expired",
         ]
-        read_only_fields = ["id", "category_name", "supliers_name", "is_expired", "batch_number", "expires_at"]
+        read_only_fields = ["id", "category_name", "supliers_name", "unit_name", "is_expired", "batch_number", "expires_at"]
         extra_kwargs = {
             "supliers": {"required": True},
             "cost_price": {"required": True},
             "margin": {"required": True},
             "stock": {"required": True},
             "category": {"required": True},
+            "unit": {"required": True},
             "serial_number": {"required": False},
         }
 
     def validate(self, data):
+        unit = data.get("unit")
+        if not unit:
+            raise serializers.ValidationError(
+                {"unit": "Unit is required for the product."}
+            )
         return data
 
     def get_category_name(self, obj):
@@ -75,6 +106,9 @@ class ProductStockSerializer(serializers.ModelSerializer):
 
     def get_supliers_name(self, obj):
         return obj.supliers.name if obj.supliers and not obj.supliers.is_deleted else None
+
+    def get_unit_name(self, obj):
+        return obj.unit.unit if obj.unit else None
 
 
 # class DiscountConfigSerializer(serializers.ModelSerializer):

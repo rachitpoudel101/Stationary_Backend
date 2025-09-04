@@ -214,14 +214,14 @@ def dashboard_stats(request):
             {"month": calendar.month_name[month_num], "sales": sales_str}
         )
 
-    # Total Product Stocks: sum of all Productstock's stock
+    # Total Product Stocks: sum of all Productstock's stock (excluding deleted)
     total_stocks = (
-        Productstock.objects.aggregate(total_stock=models.Sum("stock"))["total_stock"]
+        Productstock.objects.filter(is_deleted=False).aggregate(total_stock=models.Sum("stock"))["total_stock"]
         or 0
     )
 
-    # Product names and stocks
-    products = Productstock.objects.values("id", "name", "stock")
+    # Product names and stocks (excluding deleted)
+    products = Productstock.objects.filter(is_deleted=False).values("id", "name", "stock")
     product_ids = [p["id"] for p in products]
 
     # Calculate total sold quantity per product
@@ -251,7 +251,7 @@ def dashboard_stats(request):
     )
     week_top_product = None
     if week_top:
-        product = Productstock.objects.filter(id=week_top["product_id"]).first()
+        product = Productstock.objects.filter(id=week_top["product_id"], is_deleted=False).first()
         if product:
             week_top_product = {
                 "product_name": product.name,
@@ -271,7 +271,7 @@ def dashboard_stats(request):
     )
     month_top_product = None
     if month_top:
-        product = Productstock.objects.filter(id=month_top["product_id"]).first()
+        product = Productstock.objects.filter(id=month_top["product_id"], is_deleted=False).first()
         if product:
             month_top_product = {
                 "product_name": product.name,
@@ -289,7 +289,7 @@ def dashboard_stats(request):
     )
     year_top_product = None
     if year_top:
-        product = Productstock.objects.filter(id=year_top["product_id"]).first()
+        product = Productstock.objects.filter(id=year_top["product_id"], is_deleted=False).first()
         if product:
             year_top_product = {
                 "product_name": product.name,

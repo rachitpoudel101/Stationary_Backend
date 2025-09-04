@@ -1,13 +1,41 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 
-from core.apps.inventory.models import Category, Productstock
+from core.apps.inventory.models import Category, Productstock, UnitCreate
 from core.apps.inventory.serializers.serializers import (
     CategorySerializer,
     # DiscountConfigSerializer,
     ProductStockSerializer,
+    UnitCreateSerializer,
 )
 from core.apps.users.permissions.permissions import IsAdmin, IsSuperAdmin
+
+
+class UnitCreateViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing product units.
+    Only SuperAdmin and Admin can create/update/delete.
+    """
+
+    queryset = UnitCreate.objects.filter(is_deleted=False)
+    serializer_class = UnitCreateSerializer
+    permission_classes = [IsSuperAdmin | IsAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def get_queryset(self):
+        """
+        Optionally filter units by unit name.
+        Example: /units/?unit=kg
+        """
+        queryset = super().get_queryset()
+        unit = self.request.query_params.get("unit")
+        if unit:
+            queryset = queryset.filter(unit__icontains=unit)
+        return queryset
 
 
 class CategoryViewSet(viewsets.ModelViewSet):

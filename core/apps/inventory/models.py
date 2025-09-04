@@ -7,6 +7,27 @@ from django.utils import timezone
 from core.apps.Supliers.models import Supliers
 
 
+class UnitCreate(models.Model):
+    unit = models.CharField(max_length=15)
+    is_deleted = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        # Ensure is_deleted is always False when creating a new unit
+        if self.pk is None:
+            self.is_deleted = False
+        super().save(*args, **kwargs)
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save()
+
+    def __str__(self):
+        return self.unit
+
+    class Meta:
+        db_table = "unit_create"
+
+
 class Category(models.Model):
     class Meta:
         db_table = "category"
@@ -34,9 +55,21 @@ class Productstock(models.Model):
     class Meta:
         db_table = "product_stock"
 
+    # class QuantityChoices(models.TextChoices):
+    #     KG = "Kg", "Kg"
+    #     GRAM = "Gram", "Gram"
+    #     DOZEN = "Dozen", "Dozen"
+    #     LITER = "Liter", "Liter"
+    #     ML = "Ml", "Ml"
+    #     PIECE = "Piece", "Piece"
+    #     BOX = "Box", "Box"
+    #     PACK = "Pack", "Pack"
+
+    # unit = models.CharField(max_length=50, choices=QuantityChoices.choices, default=QuantityChoices.PIECE)
+    unit = models.ForeignKey(UnitCreate, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     product_code = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    description = models.TextField(blank=True, null=True)
+    # description = models.TextField(blank=True, null=True)
     supliers = models.ForeignKey(
         Supliers,
         on_delete=models.CASCADE,
@@ -49,7 +82,7 @@ class Productstock(models.Model):
     cost_price = models.DecimalField(
         max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))]
     )
-    stock = models.PositiveIntegerField()
+    stock = models.DecimalField(max_digits=5, decimal_places=2, validators=[MinValueValidator(0)])
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, related_name="products"
     )
