@@ -1,10 +1,10 @@
+from rest_framework import viewsets, status
+from rest_framework.response import Response
 
-from rest_framework import viewsets
-
-from core.apps.inventory.models import Category, DiscountConfig, Productstock
+from core.apps.inventory.models import Category, Productstock
 from core.apps.inventory.serializers.serializers import (
     CategorySerializer,
-    DiscountConfigSerializer,
+    # DiscountConfigSerializer,
     ProductStockSerializer,
 )
 from core.apps.users.permissions.permissions import IsAdmin, IsSuperAdmin
@@ -16,9 +16,14 @@ class CategoryViewSet(viewsets.ModelViewSet):
     Only SuperAdmin and Admin can create/update/delete.
     """
 
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_deleted=False)
     serializer_class = CategorySerializer
     permission_classes = [IsSuperAdmin | IsAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
         """
@@ -40,9 +45,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     SuperAdmin, Admin, and Staff can access.
     """
 
-    queryset = Productstock.objects.all()
+    queryset = Productstock.objects.filter(is_deleted=False)
     serializer_class = ProductStockSerializer
     permission_classes = [IsSuperAdmin | IsAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
         """
@@ -61,23 +71,28 @@ class ProductViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-class DiscountViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing discount configurations.
-    Only Admins allowed.
-    """
+# class DiscountViewSet(viewsets.ModelViewSet):
+#     """
+#     ViewSet for managing discount configurations.
+#     Only Admins allowed.
+#     """
 
-    queryset = DiscountConfig.objects.all()
-    serializer_class = DiscountConfigSerializer
-    permission_classes = [IsAdmin | IsSuperAdmin]
+#     queryset = DiscountConfig.objects.filter(is_deleted=False)
+#     serializer_class = DiscountConfigSerializer
+#     permission_classes = [IsAdmin | IsSuperAdmin]
 
-    def get_queryset(self):
-        """
-        Optionally filter discounts by product.
-        Example: /api/discounts/?product=5
-        """
-        queryset = super().get_queryset()
-        product = self.request.query_params.get("product")
-        if product:
-            queryset = queryset.filter(product_id=product)
-        return queryset
+#     def destroy(self, request, *args, **kwargs):
+#         instance = self.get_object()
+#         instance.soft_delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+#     def get_queryset(self):
+#         """
+#         Optionally filter discounts by product.
+#         Example: /api/discounts/?product=5
+#         """
+#         queryset = super().get_queryset()
+#         product = self.request.query_params.get("product")
+#         if product:
+#             queryset = queryset.filter(product_id=product)
+#         return queryset
