@@ -12,8 +12,15 @@ class UnitCreate(models.Model):
     is_deleted = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
-        # Ensure is_deleted is always False when creating a new unit
+        # If a deleted unit with the same name exists, reactivate it
         if self.pk is None:
+            existing = UnitCreate.objects.filter(unit=self.unit, is_deleted=True).first()
+            if existing:
+                existing.is_deleted = False
+                existing.save()
+                self.pk = existing.pk  # Use the reactivated unit's pk
+                self.is_deleted = False
+                return  # Do not create a new row, just update the old one
             self.is_deleted = False
         super().save(*args, **kwargs)
 
