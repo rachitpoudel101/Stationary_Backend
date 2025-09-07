@@ -7,14 +7,15 @@ from django.utils import timezone
 from core.apps.Supliers.models import Supliers
 
 
-class UnitCreate(models.Model):
+class UnitType(models.Model):
     unit = models.CharField(max_length=15)
+    description = models.TextField(blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
         # If a deleted unit with the same name exists, reactivate it
         if self.pk is None:
-            existing = UnitCreate.objects.filter(unit=self.unit, is_deleted=True).first()
+            existing = UnitType.objects.filter(unit=self.unit, is_deleted=True).first()
             if existing:
                 existing.is_deleted = False
                 existing.save()
@@ -32,7 +33,7 @@ class UnitCreate(models.Model):
         return self.unit
 
     class Meta:
-        db_table = "unit_create"
+        db_table = "unit_type"
 
 
 class Category(models.Model):
@@ -40,13 +41,6 @@ class Category(models.Model):
         db_table = "category"
 
     name = models.CharField(max_length=100)
-    # supliers = models.ForeignKey(
-    #     Supliers,
-    #     on_delete=models.CASCADE,
-    #     related_name="categories",
-    #     null=True,
-    #     blank=True,
-    # )
     is_expired_applicable = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)
 
@@ -61,22 +55,9 @@ class Category(models.Model):
 class Productstock(models.Model):
     class Meta:
         db_table = "product_stock"
-
-    # class QuantityChoices(models.TextChoices):
-    #     KG = "Kg", "Kg"
-    #     GRAM = "Gram", "Gram"
-    #     DOZEN = "Dozen", "Dozen"
-    #     LITER = "Liter", "Liter"
-    #     ML = "Ml", "Ml"
-    #     PIECE = "Piece", "Piece"
-    #     BOX = "Box", "Box"
-    #     PACK = "Pack", "Pack"
-
-    # unit = models.CharField(max_length=50, choices=QuantityChoices.choices, default=QuantityChoices.PIECE)
-    unit = models.ForeignKey(UnitCreate, on_delete=models.CASCADE, null=True, blank=True)
+    unit = models.ForeignKey(UnitType, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     product_code = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    # description = models.TextField(blank=True, null=True)
     supliers = models.ForeignKey(
         Supliers,
         on_delete=models.CASCADE,
@@ -98,6 +79,7 @@ class Productstock(models.Model):
     )
     expires_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
+    base_unit = models.ForeignKey(UnitType, on_delete=models.CASCADE, related_name="products_base_unit", null=True, blank=True)
 
     def soft_delete(self):
         self.is_deleted = True
@@ -176,26 +158,23 @@ class Productstock(models.Model):
         if not self.batch_number:
             self.batch_number = self.generate_batch_number()
         super().save(*args, **kwargs)
-
     def __str__(self):
         return self.name
 
+class UnitTypeConfigurations(models.Model):
+    class Meta:
+        db_table = "unit_configurations"
+    product = models.ForeignKey(Productstock, on_delete=models.CASCADE, null=True, blank=True)
+    unit_type = models.ForeignKey(UnitType, on_delete=models.CASCADE, null=True, blank=True, related_name="configUnit_type")  
 
-# class DiscountConfig(models.Model):
-#     class Meta:
-#         db_table = "discount_config"
+    # Example: if unit_type = Carton and conversion_per_unit = 24 → 1 Carton = 24 Pieces
+    conversion_per_unit = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    conversion_unit_name = models.ForeignKey(UnitType, on_delete=models.CASCADE, null=True, blank=True, related_name='conversion_unit_configurations')  # e.g., "pieces", "boxes"
+    is_deleted = models.BooleanField(default=False)
 
-#     product = models.ForeignKey(
-#         Productstock, on_delete=models.CASCADE, related_name="discounts"
-#     )
-#     percentage = models.DecimalField(max_digits=5, decimal_places=2)
-#     maximum_quantity = models.IntegerField()
-#     minimum_quantity = models.IntegerField()
-#     is_deleted = models.BooleanField(default=False)
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save()
 
-#     def soft_delete(self):
-#         self.is_deleted = True
-#         self.save()
-
-#     def __str__(self):
-#         return f"{self.percentage}% off on {self.product.name}"
+    def __str__(self):
+        return f"{self.conversion_per_unit} {self.unit_type.unit if self.unit_type else 'Unknown'}"
