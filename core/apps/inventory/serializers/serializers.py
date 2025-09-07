@@ -1,21 +1,22 @@
 from rest_framework import serializers
 
-from core.apps.inventory.models import Category, Productstock, UnitCreate
+from core.apps.inventory.models import Category, Productstock, UnitType, UnitTypeConfigurations
 
 
-class UnitCreateSerializer(serializers.ModelSerializer):
+class UnitTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UnitCreate
+        model = UnitType
         fields = [
             "id",
             "unit",
+            "description"
         ]
         read_only_fields = ["id"]
 
     def validate(self, data):
         unit = data.get("unit")
         if (
-            UnitCreate.objects.filter(unit=unit)
+            UnitType.objects.filter(unit=unit)
             .exclude(id=getattr(self.instance, "id", None))
             .exists()
         ):
@@ -26,15 +27,12 @@ class UnitCreateSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    # supliers_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = [
             "id",
             "name",
-            # "supliers",
-            # "supliers_name",
             "is_expired_applicable",
         ]
         read_only_fields = ["id"]
@@ -77,7 +75,6 @@ class ProductStockSerializer(serializers.ModelSerializer):
             "serial_number",
             "cost_price",
             "margin",
-            # "description",
             "stock",
             "expires_at",
             "is_expired",
@@ -111,49 +108,21 @@ class ProductStockSerializer(serializers.ModelSerializer):
         return obj.unit.unit if obj.unit else None
 
 
-# class DiscountConfigSerializer(serializers.ModelSerializer):
-#     product_name = serializers.CharField(source="product.name", read_only=True)
 
-#     class Meta:
-#         model = DiscountConfig
-#         fields = [
-#             "id",
-#             "product",
-#             "product_name",
-#             "percentage",
-#             "maximum_quantity",
-#             "minimum_quantity",
-#         ]
+class UnitTypeConfigurationsSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    unit_type_name = serializers.CharField(source="unit_type.unit", read_only=True)
 
-#     def validate(self, data):
-#         min_q = data.get("minimum_quantity")
-#         max_q = data.get("maximum_quantity")
+    class Meta:
+        model = UnitTypeConfigurations
+        fields = [
+            "id",
+            "product",
+            "product_name",
+            "unit_type",
+            "unit_type_name",
+            "conversion_per_unit",
+            'conversion_unit_name',
+        ]
+        read_only_fields = ["id", "product_name", "unit_type_name"]
 
-#         if min_q is not None and max_q is not None and min_q > max_q:
-#             raise serializers.ValidationError(
-#                 {
-#                     "maximum_quantity": "Maximum quantity must be greater than or equal to minimum quantity."
-#                 }
-#             )
-#         return data
-#         model = DiscountConfig
-#         fields = [
-#             "id",
-#             "product",
-#             "product_name",
-#             "percentage",
-#             "maximum_quantity",
-#             "minimum_quantity",
-#         ]
-
-#     def validate(self, data):
-#         min_q = data.get("minimum_quantity")
-#         max_q = data.get("maximum_quantity")
-
-#         if min_q is not None and max_q is not None and min_q > max_q:
-#             raise serializers.ValidationError(
-#                 {
-#                     "maximum_quantity": "Maximum quantity must be greater than or equal to minimum quantity."
-#                 }
-#             )
-#         return data

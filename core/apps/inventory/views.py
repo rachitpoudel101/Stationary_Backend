@@ -1,24 +1,31 @@
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 
-from core.apps.inventory.models import Category, Productstock, UnitCreate
+from core.apps.inventory.models import (
+    Category,
+    Productstock,
+    UnitType,
+    UnitTypeConfigurations,
+)
 from core.apps.inventory.serializers.serializers import (
     CategorySerializer,
-    # DiscountConfigSerializer,
     ProductStockSerializer,
-    UnitCreateSerializer,
+    UnitTypeSerializer,
+    UnitTypeConfigurationsSerializer,
 )
 from core.apps.users.permissions.permissions import IsAdmin, IsSuperAdmin
 
 
-class UnitCreateViewSet(viewsets.ModelViewSet):
+class UnitTypeViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing product units.
     Only SuperAdmin and Admin can create/update/delete.
     """
 
-    queryset = UnitCreate.objects.filter(is_deleted=False)
-    serializer_class = UnitCreateSerializer
+    queryset = UnitType.objects.filter(is_deleted=False)
+    serializer_class = UnitTypeSerializer
     permission_classes = [IsSuperAdmin | IsAdmin]
 
     def destroy(self, request, *args, **kwargs):
@@ -99,28 +106,41 @@ class ProductViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-# class DiscountViewSet(viewsets.ModelViewSet):
-#     """
-#     ViewSet for managing discount configurations.
-#     Only Admins allowed.
-#     """
+class UnitTypeConfigurationsViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing unit type configurations.
+    Only SuperAdmin and Admin can create/update/delete.
+    """
 
-#     queryset = DiscountConfig.objects.filter(is_deleted=False)
-#     serializer_class = DiscountConfigSerializer
-#     permission_classes = [IsAdmin | IsSuperAdmin]
+    queryset = UnitTypeConfigurations.objects.filter(is_deleted=False)
+    serializer_class = UnitTypeConfigurationsSerializer
+    permission_classes = [IsSuperAdmin | IsAdmin]
 
-#     def destroy(self, request, *args, **kwargs):
-#         instance = self.get_object()
-#         instance.soft_delete()
-#         return Response(status=status.HTTP_204_NO_CONTENT)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.soft_delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-#     def get_queryset(self):
-#         """
-#         Optionally filter discounts by product.
-#         Example: /api/discounts/?product=5
-#         """
-#         queryset = super().get_queryset()
-#         product = self.request.query_params.get("product")
-#         if product:
-#             queryset = queryset.filter(product_id=product)
-#         return queryset
+    def get_queryset(self):
+        """
+        Optionally filter configurations by product or unit type.
+        Example: /api/unit-configurations/?product=1&unit_type=2
+        """
+        queryset = super().get_queryset()
+        product = self.request.query_params.get("product")
+        unit_type = self.request.query_params.get("unit_type")
+
+        if product:
+            queryset = queryset.filter(product_id=product)
+        if unit_type:
+            queryset = queryset.filter(unit_type_id=unit_type)
+
+        return queryset
+
+    @action(detail=True, methods=["post"], url_path="reduce-stock")
+    def reduce_stock(self, request, pk=None):
+        """
+        Custom action to reduce stock for a specific unit configuration.
+        Reduces stock from the associated product based on unit conversion.
+        """
+        
