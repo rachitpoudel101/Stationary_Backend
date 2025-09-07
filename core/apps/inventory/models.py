@@ -98,7 +98,6 @@ class Productstock(models.Model):
     )
     expires_at = models.DateTimeField(null=True, blank=True)
     is_deleted = models.BooleanField(default=False)
-    base_unit = models.ForeignKey(UnitCreate, on_delete=models.CASCADE, related_name="products_base_unit", null=True, blank=True)
 
     def soft_delete(self):
         self.is_deleted = True
@@ -177,43 +176,10 @@ class Productstock(models.Model):
         if not self.batch_number:
             self.batch_number = self.generate_batch_number()
         super().save(*args, **kwargs)
-    
-    def get_stock_in_unit(self, unit):
-        """
-        Get the stock in the specified unit.
-        """
-        return convert_units(self.stock, self.base_unit, unit)
 
     def __str__(self):
         return self.name
 
-class UnitConversion(models.Model):
-    from_unit = models.ForeignKey(UnitCreate, on_delete=models.CASCADE, related_name="from_conversions")
-    to_unit = models.ForeignKey(UnitCreate, on_delete=models.CASCADE, related_name="to_conversions")
-    conversion_factor = models.DecimalField(
-        max_digits=10, decimal_places=4,
-        help_text="Conversion factor to convert from 'from_unit' to 'to_unit'."
-    )
-
-    class Meta:
-        db_table = "unit_conversion"
-        unique_together = ("from_unit", "to_unit")
-
-    def __str__(self):
-        return f"1 {self.from_unit} = {self.conversion_factor} {self.to_unit}"
-
-    def convert_units(quantity, from_unit, to_unit):
-        """
-        Convert a quantity from one unit to another using the UnitConversion model.
-        """
-        if from_unit == to_unit:
-            return quantity
-
-        try:
-            conversion = UnitConversion.objects.get(from_unit=from_unit, to_unit=to_unit)
-            return quantity * conversion.conversion_factor
-        except UnitConversion.DoesNotExist:
-            raise ValidationError(f"No conversion factor defined from {from_unit} to {to_unit}.")
 
 # class DiscountConfig(models.Model):
 #     class Meta:
